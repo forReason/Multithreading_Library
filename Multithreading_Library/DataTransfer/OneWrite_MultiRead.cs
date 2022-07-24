@@ -10,20 +10,21 @@ namespace Multithreading_Library.DataTransfer
     /// <summary>
     /// This class is ment to push one single decimal from one thread to several threads
     /// </summary>
-    public class OneWrite_MultiRead_Decimal
+    public class OneWrite_MultiRead<T>
     {
-        public OneWrite_MultiRead_Decimal(int msBeforeDataboxReuse = 1000)
+        public OneWrite_MultiRead(T defaultValue, int msBeforeDataboxReuse = 1000)
         {
             MsBeforeDataboxReuse = msBeforeDataboxReuse;
+            Value = defaultValue;
         }
         public int MsBeforeDataboxReuse { get; set; }
-        public decimal Value { get { return _CurrentBox.Value; } set { UpdateValue(value); } }
-        private volatile StrongBox<decimal> _CurrentBox = new StrongBox<decimal>(0);
+        public T Value { get { return _CurrentBox.Value; } set { UpdateValue(value); } }
+        private volatile StrongBox<T> _CurrentBox = new StrongBox<T>();
         private Queue<DateTime> DateTimes = new Queue<DateTime>();
-        volatile Queue<StrongBox<decimal>> Boxes = new Queue<StrongBox<decimal>>();
-        private void UpdateValue(decimal value)
+        volatile Queue<StrongBox<T>> Boxes = new Queue<StrongBox<T>>();
+        private void UpdateValue(T value)
         {
-            StrongBox<decimal> box;
+            StrongBox<T> box;
             if (DateTimes.Count > 2 && DateTime.Now > DateTimes.First().AddMilliseconds(MsBeforeDataboxReuse))
             {
                 box = Boxes.Dequeue();
@@ -31,7 +32,7 @@ namespace Multithreading_Library.DataTransfer
             }
             else
             {
-                box = new StrongBox<decimal>();
+                box = new StrongBox<T>();
             }
             box.Value = value;
             _CurrentBox = box;
