@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Multithreading_Library.DataTransfer;
 
@@ -15,7 +13,7 @@ namespace Multithreading_Unit_Tests.DataTransfer.OneWrite_MultiRead_Decimal_Test
         private int Loopcount = 0;
         private int Msdelay = 0;
         volatile bool stop = false;
-        OneWrite_MultiRead_Decimal decim = new OneWrite_MultiRead_Decimal(100);
+        OneWrite_MultiRead<decimal> decim = new OneWrite_MultiRead<decimal>(100);
         public Stopwatch Run(int loops, int msDelay, int threads)
         {
             this.Loopcount = loops;

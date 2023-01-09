@@ -29,7 +29,7 @@ namespace Multithreading_Unit_Tests.DataTransfer.OneWrite_MultiRead_Decimal_Test
         [Fact]
         public void Test_Decimal_Push_Accuracy()
         {
-            OneWrite_MultiRead_Decimal decim = new OneWrite_MultiRead_Decimal();
+            OneWrite_MultiRead<decimal> decim = new OneWrite_MultiRead<decimal>(0);
             for (decimal i = 0; i < 100000; i++)
             {
                 decim.Value = i;

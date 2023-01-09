@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.CompilerServices;
 
 namespace Multithreading_Library.DataTransfer
 {
@@ -18,6 +13,13 @@ namespace Multithreading_Library.DataTransfer
             Value = defaultValue;
         }
         public int MsBeforeDataboxReuse { get; set; }
+        /// <summary>
+        /// get or set the current value. 
+        /// </summary>
+        /// <remarks>
+        /// NOTE: in case you want to hold on to the value longer, it is recommended to use Clone() instead! </br>
+        /// this is because the boxes are beeing re-used!
+        /// </remarks>
         public T Value { get { return _CurrentBox.Value; } set { UpdateValue(value); } }
         private volatile StrongBox<T> _CurrentBox = new StrongBox<T>();
         private Queue<DateTime> DateTimes = new Queue<DateTime>();
@@ -38,6 +40,17 @@ namespace Multithreading_Library.DataTransfer
             _CurrentBox = box;
             Boxes.Enqueue(box);
             DateTimes.Enqueue(DateTime.Now);
+        }
+        public T Clone()
+        {
+            T newObject = (T)Activator.CreateInstance(Value.GetType());
+
+            foreach (var originalProp in Value.GetType().GetProperties())
+            {
+                originalProp.SetValue(newObject, originalProp.GetValue(Value));
+            }
+
+            return newObject;
         }
     }
 }
