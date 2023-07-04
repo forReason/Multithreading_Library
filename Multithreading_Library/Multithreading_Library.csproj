@@ -1,9 +1,33 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFrameworks>net7.0;net6.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>Multithreading Helpers</Title>
+    <Authors>Julian Bechtold, KryptoMine CH</Authors>
+    <Description>a very small library which i use in my multithreading projects</Description>
+    <PackageProjectUrl>https://github.com/forReason/Multithreading_Library</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/forReason/Multithreading_Library</RepositoryUrl>
+    <PackageTags>multithreading</PackageTags>
+    <Copyright>Julian Bechtold</Copyright>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageLicenseExpression>MIT-Modern-Variant</PackageLicenseExpression>
+    <PackageReleaseNotes>multi target net 6 and 7</PackageReleaseNotes>
+    <Version>1.0.1</Version>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>
