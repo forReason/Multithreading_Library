@@ -16,7 +16,7 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT-Modern-Variant</PackageLicenseExpression>
     <PackageReleaseNotes>Added Functionality to run async methods in synchronous context</PackageReleaseNotes>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <IncludeSymbols>False</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
