@@ -15,8 +15,26 @@
     <Copyright>Julian Bechtold</Copyright>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT-Modern-Variant</PackageLicenseExpression>
-    <PackageReleaseNotes>multi target net 6 and 7</PackageReleaseNotes>
-    <Version>1.0.1</Version>
+    <PackageReleaseNotes>Added Functionality to run async methods in synchronous context</PackageReleaseNotes>
+    <Version>1.1.0</Version>
+    <IncludeSymbols>False</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0|AnyCPU'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net7.0|AnyCPU'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|AnyCPU'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net6.0|AnyCPU'">
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
