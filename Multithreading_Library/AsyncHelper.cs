@@ -14,6 +14,36 @@ namespace Multithreading_Library
         /// <summary>
         /// Runs the provided asynchronous task synchronously on a new thread to avoid deadlocks.
         /// </summary>
+        /// <param name="task">The asynchronous task to run.</param>
+        /// <exception cref="AggregateException">Throws if the asynchronous task encounters an exception.</exception>
+        public static void RunSync(Func<Task> task)
+        {
+            var oldContext = SynchronizationContext.Current;
+            var synch = new ExclusiveSynchronizationContext();
+            SynchronizationContext.SetSynchronizationContext(synch);
+            synch.Post(async _ =>
+            {
+                try
+                {
+                    await task();  // Await the provided task
+                }
+                catch (Exception e)
+                {
+                    synch.InnerException = e;  // Store exception to be thrown later
+                    throw;
+                }
+                finally
+                {
+                    synch.EndMessageLoop();
+                }
+            }, null);
+            synch.BeginMessageLoop();  // Start the message loop
+
+            SynchronizationContext.SetSynchronizationContext(oldContext);
+        }
+        /// <summary>
+        /// Runs the provided asynchronous task synchronously on a new thread to avoid deadlocks.
+        /// </summary>
         /// <typeparam name="TResult">The type of the result.</typeparam>
         /// <param name="func">The asynchronous task to run.</param>
         /// <returns>The result of the Task.</returns>
