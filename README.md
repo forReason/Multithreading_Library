@@ -7,6 +7,13 @@ This library provides utilities to handle various multithreading scenarios in .N
 ```csharp
 // Example usage
 OneWrite_MultiRead<decimal> sharedDecimal = new OneWrite_MultiRead<decimal>(100);
+
+/// Reader threads
+decimal t = sharedDecimal.Value;
+
+// writer thread
+sharedDecimal.Value = VALUE1;
+
 ```
 2. `IDLocks`: This class provides locks that are accessible through a dictionary. This allows specific tasks, names, or other entities to be locked individually, enabling finer control over thread synchronization.
 ```
