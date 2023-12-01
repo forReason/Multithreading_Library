@@ -13,15 +13,23 @@ decimal t = sharedDecimal.Value;
 
 // writer thread
 sharedDecimal.Value = VALUE1;
-
 ```
+
 2. `IDLocks`: This class provides locks that are accessible through a dictionary. This allows specific tasks, names, or other entities to be locked individually, enabling finer control over thread synchronization.
 ```
 // Example usage
 IDLocks<int> idLocks = new IDLocks<int>();
 var lockObject = idLocks.ObtainLockObject(5);
 ```
-3. `AsyncHelper`: This class provides utilities to run an asynchronous Task and wait for the result in a synchronous method. It should be used with caution as it can lead to potential deadlocks. Whenever possible, prefer keeping async code all the way up the call stack.
+
+3. `RequestIDGenerator` this class returns an incremental, threadsafe id which can be used to identify requests. EG for a websocket. The function rolls over to 0 at int.MaxValue
+```
+// Example usage
+RequestIDGenerator idGenerator = new RequestIDGenerator();
+int id = idGenerator.GetNextRequestId()
+```
+
+4. `AsyncHelper`: This class provides utilities to run an asynchronous Task and wait for the result in a synchronous method. It should be used with caution as it can lead to potential deadlocks. Whenever possible, prefer keeping async code all the way up the call stack.
 ```
 // Example usage
 int parameter = 5;
