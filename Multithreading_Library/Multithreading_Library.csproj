@@ -15,9 +15,14 @@
     <Copyright>Julian Bechtold</Copyright>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT-Modern-Variant</PackageLicenseExpression>
-    <PackageReleaseNotes>- Added RequestIDGenerator to obtain short term unique identifiers
+    <PackageReleaseNotes>1.3.0
+- added LazyCache, a minimal cache implementation
+- added LazyCacheDictionary, a minimal caching solution for dictionary values
+
+1.2.1
+- Added RequestIDGenerator to obtain short term unique identifiers
 - added .Net 8.0</PackageReleaseNotes>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <IncludeSymbols>False</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <RepositoryType>git</RepositoryType>

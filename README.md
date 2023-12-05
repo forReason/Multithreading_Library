@@ -35,3 +35,31 @@ int id = idGenerator.GetNextRequestId()
 int parameter = 5;
 int result = AsyncHelper.RunSync(async () => await SomeAsyncMethod(parameter));
 ```
+
+5. `Caching`: The library includes examples of lightweight caching mechanisms.
+
+    - `LazyCache\<T\>`: A simple cache that holds a value for a specified timespan. After the timespan expires, it returns null or default.
+
+        ```csharp
+        // Example usage
+        LazyCache<int?> numberCache = new (TimeSpan.FromMinutes(5)); // values are valid for 5 Minutes
+        numberCache.Value = 42; // Setting a value
+        int? cachedNumber = numberCache.Value; // Retrieving the value
+        if (cachedNumber == null) // set new value if cache has expired
+            cachedNumber = FetchReason("Life");
+        ```
+
+    - `LazyCacheDictionary\<TKey, TValue\>`: A thread-safe, lazy-loading cache dictionary with expiration for each key. It supports automatic cleanup of expired entries.
+
+        ```csharp
+        // Example usage
+    
+        // individual item validity time = 5 Minutes
+        // cache cleanup interval = 1 Hour
+        LazyCacheDictionary<string, int?> dictionaryCache = new (TimeSpan.FromMinutes(5), TimeSpan.FromHours(1));
+    
+        dictionaryCache.Set("key1", 100); // Adding a value
+        int? value = dictionaryCache.Get("key1"); // Retrieving a value
+        if (value == null) // set new value if cache has expired
+            dictionaryCache.Set("Life", 42);
+        ```

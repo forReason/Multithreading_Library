@@ -1,4 +1,5 @@
-﻿/// <summary>
+﻿namespace Multithreading_Library.ThreadControl;
+/// <summary>
 /// Provides thread-safe generation of unique request IDs.
 /// </summary>
 /// <remarks>
