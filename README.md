@@ -37,7 +37,6 @@ int result = AsyncHelper.RunSync(async () => await SomeAsyncMethod(parameter));
 ```
 
 5. `Caching`: The library includes examples of lightweight caching mechanisms.
-
     - `LazyCache\<T\>`: A simple cache that holds a value for a specified timespan. After the timespan expires, it returns null or default.
 
         ```csharp
