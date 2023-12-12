@@ -2,7 +2,8 @@
 
 This library provides utilities to handle various multithreading scenarios in .NET applications. It contains the following classes:
 
-1. `OneWriteMultiRead`: This class allows an object to be read from multiple threads at the same time but only updated from one thread at a time. This helps to ensure data integrity when working with shared resources across multiple threads.
+1. **OneWriteMultiRead**: This class resolves performance limitations when transferring data between threads. 
+The main challenge with multiple readers is that they can block the writer from updating a variable, leading to contention. `OneWriteMultiRead` allows reader threads to access the shared data with minimal performance impact while enabling an arbitrary number of threads to read the current value simultaneously.
 
 ```csharp
 // Example usage
@@ -11,9 +12,97 @@ OneWrite_MultiRead<decimal> sharedDecimal = new OneWrite_MultiRead<decimal>(100)
 /// Reader threads
 decimal t = sharedDecimal.Value;
 
-// writer thread
+// Writer thread
 sharedDecimal.Value = VALUE1;
 ```
+
+Please note that for mutable and reference types it is recommended to enable DeepClone (Default) this makes objects sort of threadsafe by copying them.  
+Please note that each read value is then no longer Synchronized in between the threads. For immutable types such as simple data types (int, bool, ...) DeepCloning can be disabled.
+
+Custom types and structs should implement the `IDeepCloneable<T>` interface when deepcopy is enabled for improved performance. Here's an example:
+```
+[Serializable]
+internal class CloneableObject : IDeepCloneable<CloneableObject>
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public List<string> Clothes { get; set; } = new List<string>();
+
+    public CloneableObject DeepClone()
+    {
+        // Create a deep copy of the object
+        var clone = new CloneableObject
+        {
+            Id = this.Id,
+            Name = new string(this.Name.ToCharArray()) // Deep copy the string
+        };
+        foreach (string cloth in Clothes)
+        {
+            clone.Clothes.Add(new string(cloth.ToCharArray()));
+        }
+        return clone;
+    }
+}
+[Serializable]
+internal struct CloneableStruct : IDeepCloneable<CloneableStruct>
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public List<string> Clothes { get; set; }
+    public CloneableStruct DeepClone()
+    {
+        // Create a deep copy of the object
+        var clone = new CloneableStruct
+        {
+            Id = this.Id,
+            Name = new string(this.Name.ToCharArray()),
+            Clothes = new List<string>()
+        };
+        foreach (string cloth in Clothes)
+        {
+            clone.Clothes.Add(new string(cloth.ToCharArray()));
+        }
+        return clone;
+    }
+}
+```
+
+You can also access the Cloning Extension directly as suggested in the xunit test:
+```
+[Fact]
+public void DeepClone_CloneableType()
+{
+    // Arrange
+    var original = new CloneableObject()
+    {
+        Id = 1,
+        Name = "Original",
+        Clothes = new() { "Pant", "Socks" }
+    };
+
+    // Act
+    var cloned = Cloning.DeepClone(original);
+
+    // Assert
+    Assert.NotNull(cloned);
+    Assert.NotSame(original, cloned); // Ensure it's a different instance
+    Assert.Equal(original.Id, cloned.Id);
+    Assert.Equal(original.Name, cloned.Name);
+
+
+    // change values to make sure we are not destroying things
+    cloned.Name = "Clone";
+    cloned.Id = 2;
+    cloned.Clothes.AddRange(new[] { "Shirt", "Glasses" });
+
+    // Ensure that the string is deeply copied
+    Assert.NotSame(original.Name, cloned.Name);
+    Assert.NotEqual(original.Id, cloned.Id);
+    Assert.NotEqual(original.Name, cloned.Name);
+    Assert.NotEqual(original.Clothes.Count, cloned.Clothes.Count);
+}
+```
+The Cloning Method is Based on Baksteen.Extensions.DeepCopy Published under MIT-License
 
 2. `IDLocks`: This class provides locks that are accessible through a dictionary. This allows specific tasks, names, or other entities to be locked individually, enabling finer control over thread synchronization.
 ```
