@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
-
+namespace Multithreading_Unit_Tests.ThreadControl;
 public class RequestIDGeneratorTests
 {
     [Fact]

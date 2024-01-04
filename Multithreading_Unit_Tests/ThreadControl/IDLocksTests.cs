@@ -3,6 +3,7 @@ using Multithreading_Library.ThreadControl;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+namespace Multithreading_Unit_Tests.ThreadControl;
 public class IDLocksTests
 {
     [Fact]
