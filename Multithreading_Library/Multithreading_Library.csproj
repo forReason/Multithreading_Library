@@ -15,7 +15,10 @@
     <Copyright>Julian Bechtold</Copyright>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT-Modern-Variant</PackageLicenseExpression>
-    <PackageReleaseNotes>1.7.0
+    <PackageReleaseNotes>1.8.0
+- implement IDReaderWriterLock
+
+1.7.0
 - Implemented IDSemaphoreSlim, simmilar to IDLocks
 - Improved Documentation on IDLocks
 - Improved Performance of IDLocks
@@ -40,7 +43,7 @@ Fully reworked OneRead_MultiWrite
 1.2.1
 - Added RequestIDGenerator to obtain short term unique identifiers
 - added .Net 8.0</PackageReleaseNotes>
-    <Version>1.7.0</Version>
+    <Version>1.8.0</Version>
     <IncludeSymbols>False</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <RepositoryType>git</RepositoryType>
