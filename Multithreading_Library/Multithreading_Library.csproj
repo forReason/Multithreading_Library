@@ -15,7 +15,10 @@
     <Copyright>Julian Bechtold</Copyright>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT-Modern-Variant</PackageLicenseExpression>
-    <PackageReleaseNotes>1.8.0
+    <PackageReleaseNotes>1.8.1
+- Added TryGet to LazyCache
+
+1.8.0
 - implement IDReaderWriterLock
 
 1.7.0
@@ -43,7 +46,7 @@ Fully reworked OneRead_MultiWrite
 1.2.1
 - Added RequestIDGenerator to obtain short term unique identifiers
 - added .Net 8.0</PackageReleaseNotes>
-    <Version>1.8.0</Version>
+    <Version>1.8.1</Version>
     <IncludeSymbols>False</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <RepositoryType>git</RepositoryType>
@@ -86,6 +89,10 @@ Fully reworked OneRead_MultiWrite
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
   </ItemGroup>
 
 </Project>
