@@ -39,6 +39,16 @@ namespace Multithreading_Library.DataTransfer
             }
             return default;
         }
+        public bool TryGet(TKey key, out TValue? value)
+        {
+            if (cache.TryGetValue(key, out var cacheItem) && DateTimeOffset.Now - cacheItem.LastUse <= expirationTimespan)
+            {
+                value = cacheItem.Value;
+                return true;
+            }
+            value = default;
+            return false;
+        }
 
         /// <summary>
         /// Adds or updates a value in the cache.
