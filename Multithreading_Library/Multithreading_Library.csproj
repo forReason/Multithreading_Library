@@ -15,7 +15,10 @@
     <Copyright>Julian Bechtold</Copyright>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT-Modern-Variant</PackageLicenseExpression>
-    <PackageReleaseNotes>1.8.1
+    <PackageReleaseNotes>1.9.0
+- added a simple cache implementation and index cache from one of my other projects
+
+1.8.1
 - Added TryGet to LazyCache
 
 1.8.0
@@ -46,7 +49,7 @@ Fully reworked OneRead_MultiWrite
 1.2.1
 - Added RequestIDGenerator to obtain short term unique identifiers
 - added .Net 8.0</PackageReleaseNotes>
-    <Version>1.8.1</Version>
+    <Version>1.9.0</Version>
     <IncludeSymbols>False</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <RepositoryType>git</RepositoryType>
