@@ -1,10 +1,12 @@
 ﻿using System.Collections;
 
+namespace Multithreading_Library.DataTransfer;
+
 /// <summary>
 /// Represents a read-only wrapper around a HashSet.
 /// </summary>
 /// <typeparam name="T">The type of elements in the hash set.</typeparam>
-public class ReadOnlyHashSet<T> : IReadOnlyCollection<T>, IEnumerable<T>
+public class ReadOnlyHashSet<T> : IReadOnlyCollection<T>
 {
     private readonly HashSet<T> _hashSet;
 
@@ -13,7 +15,7 @@ public class ReadOnlyHashSet<T> : IReadOnlyCollection<T>, IEnumerable<T>
     /// </summary>
     /// <param name="hashSet">The HashSet to wrap.</param>
     /// <exception cref="ArgumentNullException">Thrown if the provided HashSet is null.</exception>
-    public ReadOnlyHashSet(HashSet<T> hashSet)
+    public ReadOnlyHashSet(HashSet<T>? hashSet)
     {
         _hashSet = hashSet ?? throw new ArgumentNullException(nameof(hashSet));
     }

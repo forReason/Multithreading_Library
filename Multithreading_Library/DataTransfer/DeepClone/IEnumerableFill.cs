@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 
 namespace Multithreading_Library.DataTransfer.DeepClone
 {
-    internal static class IEnumerableFill
+    internal static class EnumerableFill
     {
         internal static void FillMultiDimensionalArray(Array array, Func<object?, object?> func, int dimension, int[] counts, int[] indices)
         {
@@ -53,7 +53,7 @@ namespace Multithreading_Library.DataTransfer.DeepClone
         {
             for (int i = 0; i < list.Count; i++)
             {
-                list[i] = (T)func(list[i]);
+                list[i] = (T)func(list[i])!;
             }
         }
         internal static void FillArrayList(ArrayList arrayList, Func<object?, object?> func)
@@ -69,25 +69,25 @@ namespace Multithreading_Library.DataTransfer.DeepClone
             hashSet.Clear();
             foreach (var item in items)
             {
-                hashSet.Add((T)func(item));
+                hashSet.Add((T)func(item)!);
             }
         }
-        internal static void FillDictionary<TKey, TValue>(Dictionary<TKey, TValue> dictionary, Func<object?, object?> func)
+        internal static void FillDictionary<TKey, TValue>(Dictionary<TKey, TValue> dictionary, Func<object?, object?> func) where TKey : notnull
         {
             var keys = dictionary.Keys.ToList();
             foreach (var key in keys)
             {
-                dictionary[key] = (TValue)func(dictionary[key]);
+                dictionary[key] = (TValue)func(dictionary[key])!;
             }
         }
 
-        internal static void FillConcurrentDictionary<TKey, TValue>(ConcurrentDictionary<TKey, TValue> dictionary, Func<object?, object?> func)
+        internal static void FillConcurrentDictionary<TKey, TValue>(ConcurrentDictionary<TKey, TValue?> dictionary, Func<object?, object?> func) where TKey : notnull
         {
             foreach (var key in dictionary.Keys.ToList())
             {
                 if (dictionary.TryGetValue(key, out var value))
                 {
-                    dictionary[key] = (TValue)func(value);
+                    dictionary[key] = (TValue)func(value)!;
                 }
             }
         }
@@ -98,7 +98,7 @@ namespace Multithreading_Library.DataTransfer.DeepClone
             stack.Clear();
             foreach (var item in items)
             {
-                stack.Push((T)func(item));
+                stack.Push(((T)func(item)!));
             }
         }
         internal static void FillConcurrentStack<T>(ConcurrentStack<T> stack, Func<object?, object?> func)
@@ -108,7 +108,7 @@ namespace Multithreading_Library.DataTransfer.DeepClone
             stack.Clear();
             foreach (var item in items)
             {
-                stack.Push((T)func(item));
+                stack.Push(((T)func(item)!));
             }
         }
 
@@ -119,7 +119,7 @@ namespace Multithreading_Library.DataTransfer.DeepClone
             bag.Clear();
             foreach (var item in items)
             {
-                bag.Add((T)func(item));
+                bag.Add(((T)func(item)!));
             }
         }
 
@@ -129,7 +129,7 @@ namespace Multithreading_Library.DataTransfer.DeepClone
             queue.Clear();
             foreach (var item in items)
             {
-                queue.Enqueue((T)func(item));
+                queue.Enqueue((T)func(item!)!);
             }
         }
         internal static void FillConcurrentQueue<T>(ConcurrentQueue<T> queue, Func<object?, object?> func)
@@ -139,7 +139,7 @@ namespace Multithreading_Library.DataTransfer.DeepClone
             var newQueue = new ConcurrentQueue<T>();
             foreach (var item in items)
             {
-                newQueue.Enqueue((T)func(item));
+                newQueue.Enqueue((T)func(item!)!);
             }
             Interlocked.Exchange(ref queue, newQueue);
         }

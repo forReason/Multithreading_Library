@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Multithreading_Library.DataTransfer;
 using Xunit;
 
 namespace Multithreading_Unit_Tests.DataTransfer
@@ -9,7 +10,7 @@ namespace Multithreading_Unit_Tests.DataTransfer
         [Fact]
         public void Constructor_ShouldThrowArgumentNullException_WhenHashSetIsNull()
         {
-            Assert.Throws<System.ArgumentNullException>(() => new ReadOnlyHashSet<int>(null as HashSet<int>));
+            Assert.Throws<System.ArgumentNullException>(() => new ReadOnlyHashSet<int>(null));
         }
 
         [Fact]

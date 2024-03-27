@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿// ReSharper disable AsyncVoidLambda
 namespace Multithreading_Library
 {
     /// <summary>
@@ -19,25 +14,25 @@ namespace Multithreading_Library
         public static void RunSync(Func<Task> task)
         {
             var oldContext = SynchronizationContext.Current;
-            var synch = new ExclusiveSynchronizationContext();
-            SynchronizationContext.SetSynchronizationContext(synch);
-            synch.Post(async _ =>
+            var synchronisationContext = new ExclusiveSynchronizationContext();
+            SynchronizationContext.SetSynchronizationContext(synchronisationContext);
+            synchronisationContext.Post(async _ =>
             {
                 try
                 {
                     await task();  // Await the provided task
                 }
-                catch (Exception e)
+                catch (Exception? e)
                 {
-                    synch.InnerException = e;  // Store exception to be thrown later
+                    synchronisationContext.InnerException = e;  // Store exception to be thrown later
                     throw;
                 }
                 finally
                 {
-                    synch.EndMessageLoop();
+                    synchronisationContext.EndMessageLoop();
                 }
             }, null);
-            synch.BeginMessageLoop();  // Start the message loop
+            synchronisationContext.BeginMessageLoop();  // Start the message loop
 
             SynchronizationContext.SetSynchronizationContext(oldContext);
         }
@@ -51,69 +46,93 @@ namespace Multithreading_Library
         public static TResult RunSync<TResult>(Func<Task<TResult>> func)
         {
             var oldContext = SynchronizationContext.Current;
-            var synch = new ExclusiveSynchronizationContext();
-            SynchronizationContext.SetSynchronizationContext(synch);
-            TResult result = default;
+            var synchronisationContext = new ExclusiveSynchronizationContext();
+            SynchronizationContext.SetSynchronizationContext(synchronisationContext);
+            TResult result = default!;
 
-            synch.Post(async _ =>
+            synchronisationContext.Post(async _ =>
             {
                 try
                 {
                     result = await func();  // Await the provided task
                 }
-                catch (Exception e)
+                catch (Exception? e)
                 {
-                    synch.InnerException = e;  // Store exception to be thrown later
+                    synchronisationContext.InnerException = e;  // Store exception to be thrown later
                     throw;
                 }
                 finally
                 {
-                    synch.EndMessageLoop();
+                    synchronisationContext.EndMessageLoop();
                 }
             }, null);
-            synch.BeginMessageLoop();  // Start the message loop
+            synchronisationContext.BeginMessageLoop();  // Start the message loop
 
             SynchronizationContext.SetSynchronizationContext(oldContext);
-            return result;
+            return result!;
         }
 
 
+        /// <summary>
+        /// Provides an exclusive synchronization context that executes posted callbacks in a single-threaded, serial fashion.
+        /// This synchronization context does not support sending callbacks to the same thread it runs on and throws a <see cref="NotSupportedException"/> if attempted.
+        /// </summary>
         private class ExclusiveSynchronizationContext : SynchronizationContext
         {
-            private bool done;
-            public Exception InnerException { get; set; }
-            readonly AutoResetEvent workItemsWaiting = new AutoResetEvent(false);
-            readonly Queue<Tuple<SendOrPostCallback, object>> items = new Queue<Tuple<SendOrPostCallback, object>>();
+            private bool _done;
+            /// <summary>
+            /// Gets or sets any inner exception that might have occurred during the execution of a callback.
+            /// </summary>
+            public Exception? InnerException { get; set; }
+            readonly AutoResetEvent _workItemsWaiting = new AutoResetEvent(false);
+            readonly Queue<Tuple<SendOrPostCallback, object>> _items = new Queue<Tuple<SendOrPostCallback, object>>();
 
-            public override void Send(SendOrPostCallback d, object state)
+            /// <summary>
+            /// Schedules a callback for execution. Does not support direct execution on the same thread.
+            /// </summary>
+            /// <param name="d">The delegate to execute.</param>
+            /// <param name="state">The state to pass to the delegate.</param>
+            /// <exception cref="NotSupportedException">Thrown when an attempt is made to send a callback to the same thread.</exception>
+            public override void Send(SendOrPostCallback d, object? state)
             {
                 throw new NotSupportedException("We cannot send to our same thread");
             }
 
-            public override void Post(SendOrPostCallback d, object state)
+            /// <summary>
+            /// Posts a callback for execution. The callback is queued and executed serially in the message loop.
+            /// </summary>
+            /// <param name="d">The delegate to execute.</param>
+            /// <param name="state">The state to pass to the delegate.</param>
+            public override void Post(SendOrPostCallback d, object? state)
             {
-                lock (items)
+                lock (_items)
                 {
-                    items.Enqueue(Tuple.Create(d, state));
+                    _items.Enqueue(Tuple.Create(d, state)!);
                 }
-                workItemsWaiting.Set();
+                _workItemsWaiting.Set();
             }
 
+            /// <summary>
+            /// Signals the end of the message loop, allowing the <see cref="BeginMessageLoop"/> method to exit.
+            /// </summary>
             public void EndMessageLoop()
             {
-                Post(_ => done = true, null);  // Signal the end of the message loop
+                Post(_ => _done = true, null);  // Signal the end of the message loop
             }
 
+            /// <summary>
+            /// Starts the message loop, executing queued callbacks serially until <see cref="EndMessageLoop"/> is called.
+            /// </summary>
             public void BeginMessageLoop()
             {
-                while (!done)
+                while (!_done)
                 {
-                    Tuple<SendOrPostCallback, object> task = null;
-                    lock (items)
+                    Tuple<SendOrPostCallback, object> task = null!;
+                    lock (_items)
                     {
-                        if (items.Count > 0)
+                        if (_items.Count > 0)
                         {
-                            task = items.Dequeue();  // Dequeue the next task
+                            task = _items.Dequeue();  // Dequeue the next task
                         }
                     }
                     if (task != null)
@@ -128,16 +147,19 @@ namespace Multithreading_Library
                     }
                     else
                     {
-                        workItemsWaiting.WaitOne();  // Wait for a new task to be posted
+                        _workItemsWaiting.WaitOne();  // Wait for a new task to be posted
                     }
                 }
             }
 
+            /// <summary>
+            /// Creates a copy of the current synchronization context.
+            /// </summary>
+            /// <returns>A reference to this instance, as this context does not support creating actual copies.</returns>
             public override SynchronizationContext CreateCopy()
             {
                 return this;
             }
         }
     }
-
 }

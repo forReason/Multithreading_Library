@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Threading;
 
 namespace Multithreading_Library.ThreadControl
 {
@@ -9,9 +8,9 @@ namespace Multithreading_Library.ThreadControl
     /// synchronization for read-heavy and write operations in a concurrent environment.
     /// </summary>
     /// <typeparam name="T">The type of the keys used to identify ReaderWriterLockSlim objects.</typeparam>
-    public class IDReaderWriterLocks<T>
+    public class IDReaderWriterLocks<T> where T : notnull
     {
-        private ConcurrentDictionary<T, ReaderWriterLockSlim> locks = new ConcurrentDictionary<T, ReaderWriterLockSlim>();
+        private readonly ConcurrentDictionary<T, ReaderWriterLockSlim> _locks = new ConcurrentDictionary<T, ReaderWriterLockSlim>();
 
         /// <summary>
         /// Obtain (get or create) a ReaderWriterLockSlim object associated with a specific id. If a lock object with the specified
@@ -22,7 +21,7 @@ namespace Multithreading_Library.ThreadControl
         /// <returns>A ReaderWriterLockSlim object that can be used for reader-writer synchronization.</returns>
         public ReaderWriterLockSlim ObtainLockObject(T key)
         {
-            return locks.GetOrAdd(key, _ => new ReaderWriterLockSlim());
+            return _locks.GetOrAdd(key, _ => new ReaderWriterLockSlim());
         }
     }
 }

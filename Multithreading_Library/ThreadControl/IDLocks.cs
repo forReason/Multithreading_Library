@@ -8,9 +8,9 @@ namespace Multithreading_Library.ThreadControl
     /// in a concurrent environment.
     /// </summary>
     /// <typeparam name="T">The type of the keys used to identify lock objects.</typeparam>
-    public class IDLocks<T>
+    public class IDLocks<T> where T : notnull
     {
-        private ConcurrentDictionary<T, object> locks = new ConcurrentDictionary<T, object>();
+        private readonly ConcurrentDictionary<T, object> _locks = new ();
 
         /// <summary>
         /// Obtain (get or create) a lock object associated with a specific id. If a lock object with the specified
@@ -21,7 +21,7 @@ namespace Multithreading_Library.ThreadControl
         /// <returns>An object that can be used as a lock in synchronization scenarios.</returns>
         public object ObtainLockObject(T key)
         {
-            return locks.GetOrAdd(key, _ => new object());
+            return _locks.GetOrAdd(key, _ => new object());
         }
     }
 

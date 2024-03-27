@@ -4,6 +4,8 @@ using Xunit;
 
 namespace Multithreading_Unit_Tests.DataTransfer.DeepCloneTests
 {
+#pragma warning disable xUnit2002
+#pragma warning disable xUnit2005
     public class DeepCopyTests
     {
         [Fact]
@@ -28,6 +30,7 @@ namespace Multithreading_Unit_Tests.DataTransfer.DeepCloneTests
             var cloned = Cloning.DeepClone(original);
 
             // Assert
+
             Assert.NotNull(cloned);
             Assert.NotSame(original, cloned); // Ensure it's a different instance
             Assert.Equal(original.Id, cloned.Id);
@@ -93,7 +96,7 @@ namespace Multithreading_Unit_Tests.DataTransfer.DeepCloneTests
             // Assert
             Assert.NotNull(cloned);
             Assert.NotSame(original, cloned); // Ensure it's a different instance
-            Assert.Equal(original.Id, cloned.Id);
+            Assert.Equal(original.Id, cloned!.Id);
             Assert.Equal(original.Name, cloned.Name);
 
 
@@ -125,7 +128,7 @@ namespace Multithreading_Unit_Tests.DataTransfer.DeepCloneTests
             // Assert
             Assert.NotNull(cloned);
             Assert.NotSame(original, cloned); // Ensure it's a different instance
-            Assert.Equal(original.Id, cloned.Id);
+            Assert.Equal(original.Id, cloned!.Id);
             Assert.Equal(original.Name, cloned.Name);
 
             // change values to make sure we are not destroying things
@@ -140,4 +143,6 @@ namespace Multithreading_Unit_Tests.DataTransfer.DeepCloneTests
             Assert.NotEqual(original.Clothes.Count, cloned.Clothes.Count);
         }
     }
+#pragma warning restore xUnit2002
+#pragma warning restore xUnit2005
 }

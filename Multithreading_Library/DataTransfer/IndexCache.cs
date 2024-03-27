@@ -10,17 +10,17 @@ namespace Multithreading_Library.DataTransfer
     /// <typeparam name="TItem">The type of the items to be cached. Must not be null.</typeparam>
     public class IndexCache<TItem> where TItem : notnull
     {
-        private MemoryCache _ValueCache = new MemoryCache(new MemoryCacheOptions());
-        private MemoryCache _IndexCache = new MemoryCache(new MemoryCacheOptions());
+        private readonly MemoryCache _valueCache = new MemoryCache(new MemoryCacheOptions());
+        private readonly MemoryCache _indexCache = new MemoryCache(new MemoryCacheOptions());
         /// <summary>
         /// A thread-safe dictionary to hold the locks for each key. This ensures that only one operation can modify the cache at a time for a given key.
         /// </summary>
-        private ConcurrentDictionary<string, SemaphoreSlim> _locks = new ConcurrentDictionary<string, SemaphoreSlim>();
+        private readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new ConcurrentDictionary<string, SemaphoreSlim>();
         /// <summary>
-        /// A counter to keep track of the next available index. It is protected by <see cref="IndexLock"/> for thread safety.
+        /// A counter to keep track of the next available index. It is protected for thread safety.
         /// </summary>
         public int Count => _count;
-        private int _count = 0;
+        private int _count;
         /// <summary>
         /// Retrieves the index associated with a specific item from the cache.
         /// If the item is not found in the cache, it creates a new index, adds the item to the cache, and returns the new index.
@@ -32,25 +32,22 @@ namespace Multithreading_Library.DataTransfer
         public async Task<int> GetOrCreateIndex(TItem createItem)
         {
             if (createItem == null) throw new NullReferenceException("createItem may not be null!");
-            int cacheEntry;
 
-            if (!_IndexCache.TryGetValue(createItem.ToString()!, out cacheEntry))// Look for cache key.
+            if (_indexCache.TryGetValue(createItem.ToString()!, out int cacheEntry)) return cacheEntry; // Look for cache key.
+            SemaphoreSlim indexLock = _locks.GetOrAdd(createItem.ToString()!, _ => new SemaphoreSlim(1, 1));
+            await indexLock.WaitAsync();
+            try
             {
-                SemaphoreSlim mylock = _locks.GetOrAdd(createItem.ToString()!, k => new SemaphoreSlim(1, 1));
-                await mylock.WaitAsync();
-                try
+                if (!_indexCache.TryGetValue(createItem.ToString()!, out cacheEntry))
                 {
-                    if (!_IndexCache.TryGetValue(createItem.ToString()!, out cacheEntry))
-                    {
-                        cacheEntry = Interlocked.Increment(ref _count) -1;
-                        _IndexCache.Set(createItem.ToString()!, cacheEntry);
-                        _ValueCache.Set(cacheEntry, createItem);
-                    }
+                    cacheEntry = Interlocked.Increment(ref _count) -1;
+                    _indexCache.Set(createItem.ToString()!, cacheEntry);
+                    _valueCache.Set(cacheEntry, createItem);
                 }
-                finally
-                {
-                    mylock.Release();
-                }
+            }
+            finally
+            {
+                indexLock.Release();
             }
             return cacheEntry;
         }
@@ -61,8 +58,7 @@ namespace Multithreading_Library.DataTransfer
         /// <returns>The item associated with the specified index, if found; otherwise, null.</returns>
         public TItem? GetItemByIndex(int index)
         {
-            TItem? result;
-            _ValueCache.TryGetValue(index, out result);
+            _valueCache.TryGetValue(index, out TItem? result);
             return result;
         }
     }

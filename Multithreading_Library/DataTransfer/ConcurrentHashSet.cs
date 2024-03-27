@@ -7,7 +7,7 @@ namespace Multithreading_Library.DataTransfer
     /// Represents a thread-safe set of values.
     /// </summary>
     /// <typeparam name="T">The type of elements in the hash set.</typeparam>
-    public class ConcurrentHashSet<T> : IReadOnlyCollection<T>, IEnumerable<T>
+    public class ConcurrentHashSet<T> : IReadOnlyCollection<T> where T : notnull
     {
         /// <summary>
         /// Initializes a new instance of the ConcurrentHashSet class that is empty.
@@ -23,7 +23,7 @@ namespace Multithreading_Library.DataTransfer
             foreach (var element in elements) { Add(element); }
         }
 
-        private readonly ConcurrentDictionary<T, byte> _dictionary = new ConcurrentDictionary<T, byte>();
+        private readonly ConcurrentDictionary<T, byte> _dictionary = new ();
         private readonly byte _dummy = 0;
 
         /// <summary>
@@ -94,6 +94,10 @@ namespace Multithreading_Library.DataTransfer
         {
             return new ReadOnlyHashSet<T>(_dictionary.Keys);
         }
+        /// <summary>
+        /// Returns the enumerator for the Hashset values
+        /// </summary>
+        /// <returns></returns>
         public IEnumerator<T> GetEnumerator()
         {
             return _dictionary.Keys.GetEnumerator();

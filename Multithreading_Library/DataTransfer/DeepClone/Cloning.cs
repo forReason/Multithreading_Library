@@ -6,8 +6,34 @@ using System.Xml.Linq;
 
 namespace Multithreading_Library.DataTransfer.DeepClone
 {
+    /// <summary>
+    /// Provides functionality to deeply clone objects.
+    /// </summary>
     public static class Cloning
     {
+        /// <summary>
+        /// Creates a deep clone of the specified object.
+        /// </summary>
+        /// <typeparam name="T">The type of the object being cloned.</typeparam>
+        /// <param name="original">The original object to clone.</param>
+        /// <returns>A deep clone of the original object.</returns>
+        /// <example>
+        /// The following code demonstrates how to clone an object deeply:
+        /// <code>
+        /// MyClass original = new MyClass
+        /// {
+        ///     Property1 = "Value1",
+        ///     Property2 = 3,
+        ///     NestedObject = new NestedClass
+        ///     {
+        ///         NestedProperty = "NestedValue"
+        ///     }
+        /// };
+        /// 
+        /// MyClass cloned = original.DeepClone();
+        /// </code>
+        /// Note: Ensure that all objects to be cloned are serializable or implement IDeepCloneable for custom cloning logic.
+        /// </example>
         public static T? DeepClone<T>(this T? original)
         {
 
@@ -15,6 +41,7 @@ namespace Multithreading_Library.DataTransfer.DeepClone
         }
         private class DeepCopyContext
         {
+            // ReSharper disable once InconsistentNaming
             private static readonly Func<object, object> _shallowClone;
             // to handle object graphs containing cycles, _visited keeps track of instances we've already cloned
             private readonly Dictionary<object, object> _visited = new(ReferenceEqualityComparer.Instance);
@@ -28,7 +55,7 @@ namespace Multithreading_Library.DataTransfer.DeepClone
                 var body = Expression.Call(p1, cloneMethod);
                 _shallowClone = Expression.Lambda<Func<object, object>>(body, p1).Compile();
 
-                // Nullable<T> of deeply immutable valuetypes are themselves deeply immutable
+                // Nullable<T> of deeply immutable value types are themselves deeply immutable
                 foreach (var type in ImmutableTypes.Immutables.Where(t => t.IsValueType).ToList())
                 {
                     ImmutableTypes.Immutables.Add(typeof(Nullable<>).MakeGenericType(type));
@@ -88,7 +115,7 @@ namespace Multithreading_Library.DataTransfer.DeepClone
                 if (!IsDeeplyImmutable(arrayElementType))
                 {
                     bool isValueType = arrayElementType.IsValueType;
-                    IEnumerableFill.FillArray((Array)cloneObject, x => InternalCopy(x, !isValueType));
+                    EnumerableFill.FillArray((Array)cloneObject, x => InternalCopy(x, !isValueType));
                 }
             }
             private void HandleNonCollectionObject(Type type, object cloneObject)
@@ -107,11 +134,11 @@ namespace Multithreading_Library.DataTransfer.DeepClone
                     if (typeToReflect.IsGenericType && typeToReflect.GetGenericTypeDefinition() == typeof(List<>))
                     {
                         var elementType = typeToReflect.GetGenericArguments()[0];
-                        InvokeGenericMethod(typeof(IEnumerableFill), nameof(IEnumerableFill.FillList), new[] { elementType }, list, includeInObjectGraph);
+                        InvokeGenericMethod(typeof(EnumerableFill), nameof(EnumerableFill.FillList), new[] { elementType }, list, includeInObjectGraph);
                     }
                     else
                     {
-                        IEnumerableFill.FillArrayList((ArrayList)list, x => InternalCopy(x, includeInObjectGraph));
+                        EnumerableFill.FillArrayList((ArrayList)list, x => InternalCopy(x, includeInObjectGraph));
                     }
                 }
                 else if (typeToReflect.IsGenericType)
@@ -121,39 +148,39 @@ namespace Multithreading_Library.DataTransfer.DeepClone
 
                     if (genericTypeDefinition == typeof(HashSet<>))
                     {
-                        InvokeGenericMethod(typeof(IEnumerableFill), nameof(IEnumerableFill.FillHashSet), new[] { elementType }, cloneObject, includeInObjectGraph);
+                        InvokeGenericMethod(typeof(EnumerableFill), nameof(EnumerableFill.FillHashSet), new[] { elementType }, cloneObject, includeInObjectGraph);
                     }
                     else if (genericTypeDefinition == typeof(Queue<>))
                     {
-                        InvokeGenericMethod(typeof(IEnumerableFill), nameof(IEnumerableFill.FillQueue), new[] { elementType }, cloneObject, includeInObjectGraph);
+                        InvokeGenericMethod(typeof(EnumerableFill), nameof(EnumerableFill.FillQueue), new[] { elementType }, cloneObject, includeInObjectGraph);
                     }
                     else if (genericTypeDefinition == typeof(Stack<>))
                     {
-                        InvokeGenericMethod(typeof(IEnumerableFill), nameof(IEnumerableFill.FillStack), new[] { elementType }, cloneObject, includeInObjectGraph);
+                        InvokeGenericMethod(typeof(EnumerableFill), nameof(EnumerableFill.FillStack), new[] { elementType }, cloneObject, includeInObjectGraph);
                     }
                     else if (genericTypeDefinition == typeof(Dictionary<,>))
                     {
                         var keyType = typeToReflect.GetGenericArguments()[0];
                         var valueType = typeToReflect.GetGenericArguments()[1];
-                        InvokeGenericMethod(typeof(IEnumerableFill), nameof(IEnumerableFill.FillDictionary), new[] { keyType, valueType }, cloneObject, includeInObjectGraph);
+                        InvokeGenericMethod(typeof(EnumerableFill), nameof(EnumerableFill.FillDictionary), new[] { keyType, valueType }, cloneObject, includeInObjectGraph);
                     }
                     else if (genericTypeDefinition == typeof(ConcurrentBag<>))
                     {
-                        InvokeGenericMethod(typeof(IEnumerableFill), nameof(IEnumerableFill.FillConcurrentBag), new[] { elementType }, cloneObject, includeInObjectGraph);
+                        InvokeGenericMethod(typeof(EnumerableFill), nameof(EnumerableFill.FillConcurrentBag), new[] { elementType }, cloneObject, includeInObjectGraph);
                     }
                     else if (genericTypeDefinition == typeof(ConcurrentQueue<>))
                     {
-                        InvokeGenericMethod(typeof(IEnumerableFill), nameof(IEnumerableFill.FillConcurrentQueue), new[] { elementType }, cloneObject, includeInObjectGraph);
+                        InvokeGenericMethod(typeof(EnumerableFill), nameof(EnumerableFill.FillConcurrentQueue), new[] { elementType }, cloneObject, includeInObjectGraph);
                     }
                     else if (genericTypeDefinition == typeof(ConcurrentStack<>))
                     {
-                        InvokeGenericMethod(typeof(IEnumerableFill), nameof(IEnumerableFill.FillConcurrentStack), new[] { elementType }, cloneObject, includeInObjectGraph);
+                        InvokeGenericMethod(typeof(EnumerableFill), nameof(EnumerableFill.FillConcurrentStack), new[] { elementType }, cloneObject, includeInObjectGraph);
                     }
                     else if (genericTypeDefinition == typeof(ConcurrentDictionary<,>))
                     {
                         var keyType = typeToReflect.GetGenericArguments()[0];
                         var valueType = typeToReflect.GetGenericArguments()[1];
-                        InvokeGenericMethod(typeof(IEnumerableFill), nameof(IEnumerableFill.FillConcurrentDictionary), new[] { keyType, valueType }, cloneObject, includeInObjectGraph);
+                        InvokeGenericMethod(typeof(EnumerableFill), nameof(EnumerableFill.FillConcurrentDictionary), new[] { keyType, valueType }, cloneObject, includeInObjectGraph);
                     }
                     // Add additional generic collections as needed
                     else
@@ -180,7 +207,7 @@ namespace Multithreading_Library.DataTransfer.DeepClone
                 var genericMethod = methodInfo.MakeGenericMethod(genericArguments);
 
                 // Prepare parameters and invoke the method
-                var parameters = new object[] { targetObject, new Func<object?, object?>(x => InternalCopy(x, includeInGraph)) };
+                Object[] parameters = new [] { targetObject, new Func<object?, object?>(x => InternalCopy(x, includeInGraph)) };
                 genericMethod.Invoke(null, parameters);
             }
 

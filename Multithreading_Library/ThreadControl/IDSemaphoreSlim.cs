@@ -8,9 +8,9 @@ namespace Multithreading_Library.ThreadControl
     /// synchronization and resource control in a concurrent environment.
     /// </summary>
     /// <typeparam name="T">The type of the keys used to identify SemaphoreSlim objects.</typeparam>
-    public class IDSemaphoreSlim<T>
+    public class IDSemaphoreSlim<T> where T : notnull
     {
-        ConcurrentDictionary<T,SemaphoreSlim> locks = new ConcurrentDictionary<T, SemaphoreSlim>();
+        readonly ConcurrentDictionary<T,SemaphoreSlim> _locks = new ConcurrentDictionary<T, SemaphoreSlim>();
         /// <summary>
         /// Obtain (get or create) a lock object with the specified id. If the lock object doesn't exist,
         /// it's created with an initial count of 1 and a maximum count of 1. This method is typically used
@@ -21,7 +21,7 @@ namespace Multithreading_Library.ThreadControl
         /// <returns>A SemaphoreSlim object associated with the specified key.</returns>
         public SemaphoreSlim ObtainLockObject(T key)
         {
-            return locks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+            return _locks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Multithreading_Library.ThreadControl
         /// <returns>A SemaphoreSlim object associated with the specified key.</returns>
         public SemaphoreSlim ObtainLockObject(T key, int initialCount)
         {
-            return locks.GetOrAdd(key, _ => new SemaphoreSlim(initialCount));
+            return _locks.GetOrAdd(key, _ => new SemaphoreSlim(initialCount));
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Multithreading_Library.ThreadControl
         /// <returns>A SemaphoreSlim object associated with the specified key.</returns>
         public SemaphoreSlim ObtainLockObject(T key, int initialCount, int maxCount)
         {
-            return locks.GetOrAdd(key, _ => new SemaphoreSlim(initialCount, maxCount));
+            return _locks.GetOrAdd(key, _ => new SemaphoreSlim(initialCount, maxCount));
         }
     }
 }

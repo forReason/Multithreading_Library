@@ -7,12 +7,11 @@ namespace Multithreading_Library.DataTransfer
     /// </summary>
     /// <typeparam name="TKey">The type of keys in the cache.</typeparam>
     /// <typeparam name="TValue">The type of values in the cache.</typeparam>
-    public class LazyCacheDictionary<TKey, TValue> : IDisposable
+    public class LazyCacheDictionary<TKey, TValue> : IDisposable where TKey : notnull
     {
-        private ConcurrentDictionary<TKey, (TValue Value, DateTimeOffset LastUse)> cache
-            = new ConcurrentDictionary<TKey, (TValue, DateTimeOffset)>();
-        private TimeSpan expirationTimespan;
-        private Timer cleanupTimer;
+        private readonly ConcurrentDictionary<TKey, (TValue Value, DateTimeOffset LastUse)> _cache = new ();
+        private readonly TimeSpan _expirationTimespan;
+        private readonly Timer _cleanupTimer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LazyCacheDictionary{TKey, TValue}"/> class.
@@ -22,8 +21,8 @@ namespace Multithreading_Library.DataTransfer
         /// (take it rather long, probably > 5-10x expirationTimespan)</param>
         public LazyCacheDictionary(TimeSpan expirationTimespan, TimeSpan cleanupInterval)
         {
-            this.expirationTimespan = expirationTimespan;
-            cleanupTimer = new Timer(CleanupCache, null, cleanupInterval, cleanupInterval);
+            this._expirationTimespan = expirationTimespan;
+            _cleanupTimer = new Timer(CleanupCache!, null, cleanupInterval, cleanupInterval);
         }
 
         /// <summary>
@@ -31,17 +30,23 @@ namespace Multithreading_Library.DataTransfer
         /// </summary>
         /// <param name="key">The key of the value to retrieve.</param>
         /// <returns>The value associated with the key if found and not expired; otherwise, the default value for the type of the value parameter.</returns>
-        public TValue Get(TKey key)
+        public TValue? Get(TKey key)
         {
-            if (cache.TryGetValue(key, out var cacheItem) && DateTimeOffset.Now - cacheItem.LastUse <= expirationTimespan)
+            if (_cache.TryGetValue(key, out var cacheItem) && DateTimeOffset.Now - cacheItem.LastUse <= _expirationTimespan)
             {
                 return cacheItem.Value;
             }
             return default;
         }
+        /// <summary>
+        /// attempts to retrieve the value.
+        /// </summary>
+        /// <param name="key">the key to look up</param>
+        /// <param name="value">the value to return</param>
+        /// <returns>true or false based on if the action was successful</returns>
         public bool TryGet(TKey key, out TValue? value)
         {
-            if (cache.TryGetValue(key, out var cacheItem) && DateTimeOffset.Now - cacheItem.LastUse <= expirationTimespan)
+            if (_cache.TryGetValue(key, out var cacheItem) && DateTimeOffset.Now - cacheItem.LastUse <= _expirationTimespan)
             {
                 value = cacheItem.Value;
                 return true;
@@ -57,7 +62,7 @@ namespace Multithreading_Library.DataTransfer
         /// <param name="value">The value to be associated with the key.</param>
         public void Set(TKey key, TValue value)
         {
-            cache.AddOrUpdate(key, (value, DateTimeOffset.Now), (k, old) => (value, DateTimeOffset.Now));
+            _cache.AddOrUpdate(key, (value, DateTimeOffset.Now), (_, _) => (value, DateTimeOffset.Now));
         }
 
         /// <summary>
@@ -66,13 +71,13 @@ namespace Multithreading_Library.DataTransfer
         /// <param name="state">An object containing application-specific information relevant to the method invoked by this delegate, or null.</param>
         private void CleanupCache(object state)
         {
-            var expiredKeys = cache.Where(kv => DateTimeOffset.Now - kv.Value.LastUse > expirationTimespan)
+            var expiredKeys = _cache.Where(kv => DateTimeOffset.Now - kv.Value.LastUse > _expirationTimespan)
                                    .Select(kv => kv.Key)
                                    .ToList();
 
             foreach (var key in expiredKeys)
             {
-                cache.TryRemove(key, out var _);
+                _cache.TryRemove(key, out var _);
             }
         }
 
@@ -81,7 +86,7 @@ namespace Multithreading_Library.DataTransfer
         /// </summary>
         public void Clear()
         {
-            cache.Clear();
+            _cache.Clear();
         }
 
         /// <summary>
@@ -89,7 +94,8 @@ namespace Multithreading_Library.DataTransfer
         /// </summary>
         public void Dispose()
         {
-            cleanupTimer?.Dispose();
+            // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+            _cleanupTimer?.Dispose();
         }
     }
 }

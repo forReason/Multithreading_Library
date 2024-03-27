@@ -12,7 +12,7 @@
     /// <typeparam name="T">The type of the cache</typeparam>
     public class LazyCache<T> : IDisposable
     {
-        private ReaderWriterLockSlim cacheLock = new ReaderWriterLockSlim();
+        private ReaderWriterLockSlim _cacheLock = new ReaderWriterLockSlim();
         private T? _cacheValue;
         private DateTimeOffset _lastUse = DateTimeOffset.MinValue;
         /// <summary>
@@ -31,7 +31,7 @@
         {
             get
             {
-                cacheLock.EnterReadLock();
+                _cacheLock.EnterReadLock();
                 try
                 {
                     if (_cacheValue == null || DateTimeOffset.Now - _lastUse > ExpirationTimespan)
@@ -40,12 +40,12 @@
                 }
                 finally
                 {
-                    cacheLock.ExitReadLock();
+                    _cacheLock.ExitReadLock();
                 }
             }
             set
             {
-                cacheLock.EnterWriteLock();
+                _cacheLock.EnterWriteLock();
                 try
                 {
                     _cacheValue = value;
@@ -53,7 +53,7 @@
                 }
                 finally
                 {
-                    cacheLock.ExitWriteLock();
+                    _cacheLock.ExitWriteLock();
                 }
             }
         }
@@ -67,7 +67,7 @@
         /// </summary>
         public void Clear()
         {
-            cacheLock.EnterWriteLock();
+            _cacheLock.EnterWriteLock();
             try
             {
                 _cacheValue = default;
@@ -75,7 +75,7 @@
             }
             finally
             {
-                cacheLock.ExitWriteLock();
+                _cacheLock.ExitWriteLock();
             }
         }
 
@@ -84,10 +84,11 @@
         /// </summary>
         public void Dispose()
         {
-            if (cacheLock != null)
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+            if (_cacheLock != null)
             {
-                cacheLock.Dispose();
-                cacheLock = null!;
+                _cacheLock.Dispose();
+                _cacheLock = null!;
             }
         }
     }

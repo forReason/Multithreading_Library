@@ -66,6 +66,6 @@ public static class RequestIDGeneratorExtensions
     {
         typeof(RequestIDGenerator)
             .GetField("_nextRequestId", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            .SetValue(generator, value);
+            ?.SetValue(generator, value);
     }
 }
