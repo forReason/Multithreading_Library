@@ -16,14 +16,18 @@
     <Copyright>Julian Bechtold</Copyright>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT-Modern-Variant</PackageLicenseExpression>
-    <PackageReleaseNotes>2.1.0
+    <PackageReleaseNotes>2.1.1
+- added TryGet for uniquely identified classes and structs
+
+2.1.0
 - Update ConcurrentHashset in order to allow value updating
+- Remove has been renamed to TryRemove
 
 2.0.0
 - implement new debouncers
 - clean all code by fixing compiler warnings
 - update xml comments</PackageReleaseNotes>
-    <Version>2.1.0</Version>
+    <Version>2.1.1</Version>
     <IncludeSymbols>False</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <RepositoryType>git</RepositoryType>
