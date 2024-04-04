@@ -12,7 +12,9 @@ namespace Multithreading_Library.DataTransfer
         /// <summary>
         /// Initializes a new instance of the ConcurrentHashSet class that is empty.
         /// </summary>
-        public ConcurrentHashSet() { }
+        public ConcurrentHashSet()
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the ConcurrentHashSet class that contains elements copied from the specified collection.
@@ -20,11 +22,13 @@ namespace Multithreading_Library.DataTransfer
         /// <param name="elements">The collection whose elements are copied to the new set.</param>
         public ConcurrentHashSet(IEnumerable<T> elements)
         {
-            foreach (var element in elements) { Add(element); }
+            foreach (var element in elements)
+            {
+                Add(element);
+            }
         }
 
-        private readonly ConcurrentDictionary<T, byte> _dictionary = new ();
-        private readonly byte _dummy = 0;
+        private readonly ConcurrentDictionary<T, T> _dictionary = new();
 
         /// <summary>
         /// Tries to add an element to the ConcurrentHashSet.
@@ -33,7 +37,7 @@ namespace Multithreading_Library.DataTransfer
         /// <returns>true if the element is added successfully; false if the element already exists.</returns>
         public bool Add(T item)
         {
-            return _dictionary.TryAdd(item, _dummy);
+            return _dictionary.TryAdd(item, item);
         }
 
         /// <summary>
@@ -50,10 +54,23 @@ namespace Multithreading_Library.DataTransfer
         /// Removes the specified element from the ConcurrentHashSet.
         /// </summary>
         /// <param name="item">The element to remove.</param>
+        /// <param name="removedItem">the item which was removed</param>
         /// <returns>true if the element was successfully found and removed; otherwise, false.</returns>
-        public bool Remove(T item)
+        public bool TryRemove(T item, out T? removedItem)
         {
-            return _dictionary.TryRemove(item, out _);
+            return _dictionary.TryRemove(item, out removedItem);
+        }
+
+        /// <summary>
+        /// Adds an element to the ConcurrentHashSet if it does not already exist, or replaces an existing element.
+        /// </summary>
+        /// <param name="item">The element to add or update.</param>
+        /// <remarks>
+        /// This is specifically relevant for structs and classes where a custom .Equals and .GetHashCode are defined
+        /// </remarks>
+        public void AddOrReplace(T item)
+        {
+            _dictionary.AddOrUpdate(item, item, (key, oldValue) => item);
         }
 
         /// <summary>
@@ -79,7 +96,7 @@ namespace Multithreading_Library.DataTransfer
         /// </remarks>
         public HashSet<T> AsHashSet()
         {
-            return new HashSet<T>(_dictionary.Keys);
+            return [.._dictionary.Values];
         }
 
         /// <summary>
@@ -92,7 +109,7 @@ namespace Multithreading_Library.DataTransfer
         /// </remarks>
         public ReadOnlyHashSet<T> AsReadOnlyHashSet()
         {
-            return new ReadOnlyHashSet<T>(_dictionary.Keys);
+            return new ReadOnlyHashSet<T>(_dictionary.Values);
         }
         /// <summary>
         /// Returns the enumerator for the Hashset values
@@ -100,7 +117,7 @@ namespace Multithreading_Library.DataTransfer
         /// <returns></returns>
         public IEnumerator<T> GetEnumerator()
         {
-            return _dictionary.Keys.GetEnumerator();
+            return _dictionary.Values.GetEnumerator();
         }
         IEnumerator IEnumerable.GetEnumerator()
         {
