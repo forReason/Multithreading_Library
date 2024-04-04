@@ -6,6 +6,13 @@ namespace Multithreading_Library.DataTransfer
     /// <summary>
     /// Represents a thread-safe set of values.
     /// </summary>
+    /// <remarks>
+    /// internally utilizes a concurrentDictionary(T, T) and it thus less memory efficient than a Hashset and slower.<br/>
+    /// But fixes the Concurrency issues and serves the same deduplication feature than a Hashset with the addition of <br/>
+    /// - <see cref="AddOrReplace"/><br/>
+    /// - <see cref="TryGet"/><br/>
+    /// Both are implemented for custom structs and classes which have a unique identifier via .Equals and .GetHash but other properties may change
+    /// </remarks>
     /// <typeparam name="T">The type of elements in the hash set.</typeparam>
     public class ConcurrentHashSet<T> : IReadOnlyCollection<T> where T : notnull
     {
@@ -64,13 +71,28 @@ namespace Multithreading_Library.DataTransfer
         /// <summary>
         /// Adds an element to the ConcurrentHashSet if it does not already exist, or replaces an existing element.
         /// </summary>
-        /// <param name="item">The element to add or update.</param>
         /// <remarks>
         /// This is specifically relevant for structs and classes where a custom .Equals and .GetHashCode are defined
         /// </remarks>
+        /// <param name="item">The element to add or update.</param>
         public void AddOrReplace(T item)
         {
             _dictionary.AddOrUpdate(item, item, (key, oldValue) => item);
+        }
+
+        /// <summary>
+        /// this function returns the stored item within the Hashset
+        /// </summary>
+        /// <remarks>
+        /// This is specifically relevant for structs and classes where a custom .Equals and .GetHashCode are defined,
+        /// but the other properties may have changed
+        /// </remarks>
+        /// <param name="item">the item to look up</param>
+        /// <param name="result">the result</param>
+        /// <returns>the item of the hashset (if available)</returns>
+        public bool TryGet(T item, out T? result)
+        {
+            return _dictionary.TryGetValue(item, out result);
         }
 
         /// <summary>
