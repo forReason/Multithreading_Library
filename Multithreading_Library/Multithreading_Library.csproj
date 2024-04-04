@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0;net7.0;net6.0</TargetFrameworks>
+    <LangVersion>12</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -15,46 +16,14 @@
     <Copyright>Julian Bechtold</Copyright>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT-Modern-Variant</PackageLicenseExpression>
-    <PackageReleaseNotes>2.0.0
+    <PackageReleaseNotes>2.1.0
+- Update ConcurrentHashset in order to allow value updating
+
+2.0.0
 - implement new debouncers
 - clean all code by fixing compiler warnings
-- update xml comments
-
-1.9.0
-- added a simple cache implementation and index cache from one of my other projects
-
-1.8.1
-- Added TryGet to LazyCache
-
-1.8.0
-- implement IDReaderWriterLock
-
-1.7.0
-- Implemented IDSemaphoreSlim, simmilar to IDLocks
-- Improved Documentation on IDLocks
-- Improved Performance of IDLocks
-
-1.6.0
-- implement DataTransfer.ConcurrentHashset
-- added unit tests
-- added Ienumerable constructor for readonly hashset
-
-1.5.0
-- implement DataTransfer.ReadOnlyHashSet wrapper
-
-1.4.0
-Fully reworked OneRead_MultiWrite
-- no longer nessesary to provide a timespan
-- allows DeepCopy
-
-1.3.0
-- added LazyCache, a minimal cache implementation
-- added LazyCacheDictionary, a minimal caching solution for dictionary values
-
-1.2.1
-- Added RequestIDGenerator to obtain short term unique identifiers
-- added .Net 8.0</PackageReleaseNotes>
-    <Version>2.0.0</Version>
+- update xml comments</PackageReleaseNotes>
+    <Version>2.1.0</Version>
     <IncludeSymbols>False</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <RepositoryType>git</RepositoryType>
