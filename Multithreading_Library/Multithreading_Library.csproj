@@ -16,7 +16,11 @@
     <Copyright>Julian Bechtold</Copyright>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT-Modern-Variant</PackageLicenseExpression>
-    <PackageReleaseNotes>2.3.0
+    <PackageReleaseNotes>2.4.0
+- upate and merge Blockdebouncer and ExclusiveExecutiondebouncer
+- Inplement AwaitableSignal
+
+2.3.0
 Added an implementation of asyncReaderWriterLock
 
 2.2.0
@@ -33,7 +37,7 @@ Added an implementation of asyncReaderWriterLock
 - implement new debouncers
 - clean all code by fixing compiler warnings
 - update xml comments</PackageReleaseNotes>
-    <Version>2.3.0</Version>
+    <Version>2.4.0</Version>
     <IncludeSymbols>False</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <RepositoryType>git</RepositoryType>
