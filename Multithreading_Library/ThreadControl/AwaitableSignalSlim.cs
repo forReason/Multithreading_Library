@@ -23,10 +23,10 @@ public class AwaitableSignalSlim
     /// <summary>
     /// returns an awaitable Task that completes then the event is either fired or failed (timeout / cancelled)
     /// </summary>
-    /// <param name="timeOut">the maximum timespan to wait for the event</param>
-    /// <param name="cancellation">cancels the waiting for the event</param>
+    /// <param name="timeOut">optional: the maximum timespan to wait for the event</param>
+    /// <param name="cancellation">optional: cancels the waiting for the event</param>
     /// <returns>true when the event was fired, false when not</returns>
-    public async Task<bool> AwaitSignalAsync(TimeSpan? timeOut, CancellationToken? cancellation)
+    public async Task<bool> AwaitSignalAsync(TimeSpan? timeOut = null, CancellationToken? cancellation = null)
     {
         if ((ExecutionState)Interlocked.CompareExchange(ref _Status, 0, 0) == ExecutionState.Executing) return true;
         Interlocked.Increment(ref _Waiting);
