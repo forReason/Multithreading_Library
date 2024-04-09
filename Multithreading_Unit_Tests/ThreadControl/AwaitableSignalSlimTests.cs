@@ -8,7 +8,6 @@ namespace Multithreading_Unit_Tests.ThreadControl;
 
 public class AwaitableSignalSlimTests
 {
-    // TODO: TEST
     [Fact]
     public async Task AwaitSignalAsync_SignalNotFired_TimesOut()
     {
