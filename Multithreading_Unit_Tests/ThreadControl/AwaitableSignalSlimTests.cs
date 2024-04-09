@@ -62,7 +62,8 @@ public class AwaitableSignalSlimTests
         // Cancel before firing the signal
         cts.Cancel();
 
-        await Assert.ThrowsAsync<TaskCanceledException>(() => task);
+        bool success = await task;
+        Assert.False(success);
     }
 
     [Fact]
@@ -87,11 +88,7 @@ public class AwaitableSignalSlimTests
             tasks[i] = signal.AwaitSignalAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
         }
 
-        for (int j = 0; j < 10; j++) // Fire event multiple times during the wait period.
-        {
-            await Task.Delay(1000); // Delay to simulate work and give time for all tasks to start waiting.
-            signal.FireEvent();
-        }
+        signal.FireEvent();
 
         await Task.WhenAll(tasks);
 

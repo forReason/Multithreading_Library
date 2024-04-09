@@ -43,14 +43,14 @@ public class AwaitableSignalSlim : IDisposable
             else
                 eventFired = await _WaitContext.WaitAsync(timeOut.Value, cancellation ?? CancellationToken.None);
         }
-        catch (TaskCanceledException ex)
+        catch (OperationCanceledException ex)
         {
             // do nothing, the task was cancelled eventFired = false;
         }
 
         if (!eventFired)
         {
-            if (Interlocked.Decrement(ref _Waiting) != 0) return eventFired;
+            if (Interlocked.Decrement(ref _Waiting) >= 0) return eventFired;
             // Lock releases were calculated already!
             Interlocked.Increment(ref _Waiting);
             await _WaitContext.WaitAsync();
