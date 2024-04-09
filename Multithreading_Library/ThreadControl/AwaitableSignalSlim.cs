@@ -6,7 +6,7 @@ namespace Multithreading_Library.ThreadControl;
 /// provides functionality to subscribe to a signal which can be awaited.<br/>
 /// a subscription is only valid for one cycle.
 /// </summary>
-public class AwaitableSignalSlim
+public class AwaitableSignalSlim : IDisposable
 {
     private readonly SemaphoreSlim _WaitContext = new SemaphoreSlim(0, int.MaxValue);
     /// <summary>
@@ -19,6 +19,7 @@ public class AwaitableSignalSlim
     /// </summary>
     public ExecutionState Status => (ExecutionState)_Status;
     private int _Status = 0;
+    private bool _Disposed = false;
 
     /// <summary>
     /// returns an awaitable Task that completes then the event is either fired or failed (timeout / cancelled)
@@ -79,5 +80,33 @@ public class AwaitableSignalSlim
         {
             _WaitContext.Release(toRelease);
         }
+    }
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_Disposed)
+        {
+            if (disposing)
+            {
+                // Dispose managed resources.
+                _WaitContext.Dispose();
+            }
+
+            // Note: No unmanaged resources to release, but if there were,
+            // this is where you would do it.
+
+            _Disposed = true;
+        }
+    }
+
+    // Destructor (finalizer)
+    ~AwaitableSignalSlim()
+    {
+        Dispose(false);
     }
 }
