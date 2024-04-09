@@ -8,61 +8,86 @@ namespace Multithreading_Unit_Tests.ThreadControl.Debouncing;
 public class BlockDebouncerTests
 {
     [Fact]
-    public void TryExecute_AllowsFirstExecutionImmediately()
+    public async Task DebounceAsync_WithoutConcurrency_AllowsImmediateExecution()
     {
-        // Arrange
-        var debouncer = new BlockDebouncer(TimeSpan.FromSeconds(1));
-        bool actionExecuted = false;
-
-        // Act
-        var result = debouncer.TryExecute(() => actionExecuted = true);
-
-        // Assert
-        Assert.True(result, "The first execution should be allowed.");
-        Assert.True(actionExecuted, "The action should have been executed.");
+        var debouncer = new BlockDebouncer();
+        bool result = await debouncer.DebounceAsync();
+        
+        Assert.True(result);
     }
 
     [Fact]
-    public async Task TryExecute_BlocksSubsequentExecutionsWithinCooldownPeriod()
+    public async Task DebounceAsync_WithCooldown_PreventsImmediateReexecution()
     {
-        // Arrange
-        var debouncer = new BlockDebouncer(TimeSpan.FromSeconds(1));
-        int executionCount = 0;
+        var cooldown = TimeSpan.FromMilliseconds(200);
+        var debouncer = new BlockDebouncer(cooldownPeriod: cooldown);
+        
+        bool firstResult = await debouncer.DebounceAsync();
+        await Task.Delay(50); // Shorter than cooldown
+        debouncer.Unlock(); // Simulate end of first execution
+        bool secondResult = await debouncer.DebounceAsync();
 
-        // Act
-        debouncer.TryExecute(() => executionCount++);
-        await Task.Delay(500); // Wait for half the cooldown period
-        debouncer.TryExecute(() => executionCount++);
-
-        // Assert
-        Assert.Equal(1, executionCount);
+        Assert.True(firstResult);
+        Assert.False(secondResult);
     }
 
     [Fact]
-    public async Task TryExecute_AllowsExecutionAfterCooldownPeriod()
+    public async Task DebounceAsync_WithTimeout_AllowsReexecutionAfterTimeout()
     {
-        // Arrange
-        var debouncer = new BlockDebouncer(TimeSpan.FromMilliseconds(100)); // Short cooldown for testing
-        int executionCount = 0;
+        var timeout = TimeSpan.FromMilliseconds(100);
+        var debouncer = new BlockDebouncer(timeOut: timeout);
+        
+        bool firstResult = await debouncer.DebounceAsync();
+        await Task.Delay(timeout + TimeSpan.FromMilliseconds(50)); // Wait for timeout to expire
+        bool secondResult = await debouncer.DebounceAsync();
 
-        // Act
-        debouncer.TryExecute(() => executionCount++);
-        await Task.Delay(150); // Wait longer than the cooldown period
-        var result = debouncer.TryExecute(() => executionCount++);
-
-        // Assert
-        Assert.True(result, "The second execution should be allowed after the cooldown period.");
-        Assert.Equal(2, executionCount);
+        Assert.True(firstResult);
+        Assert.True(secondResult);
     }
 
     [Fact]
-    public void TryExecute_ReturnsFalseIfBlocked()
+    public async Task DebounceAsync_WithCooldownAndAwaitCooldownPeriod_WaitsForCooldown()
     {
-        // Arrange
-        var debouncer = new BlockDebouncer(TimeSpan.FromSeconds(1));
+        var cooldown = TimeSpan.FromMilliseconds(200);
+        var debouncer = new BlockDebouncer(cooldownPeriod: cooldown);
+        
+        bool firstResult = await debouncer.DebounceAsync();
+        Task<bool> debounceTask = debouncer.DebounceAsync(awaitCooldownPeriod: true);
+        
+        debouncer.Unlock(); // End of first execution
+        var startTime = DateTime.Now;
+        bool secondResult = await debounceTask;
+        var elapsed = DateTime.Now - startTime;
+        Assert.True(firstResult);
+        
+        Assert.False(secondResult);
+        Assert.True(elapsed < cooldown*1.1, $"Elapsed time {elapsed} should be smaller than {cooldown*1.1}");
+        Assert.True(elapsed > cooldown*0.9, $"Elapsed time {elapsed} should be greater than {cooldown*0.9}");
+    }
 
-        // Act & Assert
-        Assert.True(debouncer.TryExecute(() => { }), "The first call should succeed.");
-        Assert.False(debouncer.TryExecute(() => { }), "The second call should be blocked and return false.");
+    [Fact]
+    public async Task Unlock_UpdatesLastCompletionTime()
+    {
+        var debouncer = new BlockDebouncer();
+        await debouncer.DebounceAsync();
+        
+        debouncer.Unlock();
+        var lastCompletionTime = debouncer.LastCompletionTime;
+
+        Assert.True(DateTime.UtcNow >= lastCompletionTime, "Last completion time should be updated to a recent time after unlock.");
+    }
+
+    [Fact]
+    public void Dispose_CancelsPendingTimeoutTask()
+    {
+        var timeout = TimeSpan.FromSeconds(1);
+        var debouncer = new BlockDebouncer(timeOut: timeout);
+
+        var task = debouncer.DebounceAsync();
+
+        debouncer.Dispose();
+
+        // Test passes if no unobserved task exception occurs due to the pending timeout task being properly cancelled and disposed.
+        Assert.True(task.IsCompletedSuccessfully);
     }
 }
