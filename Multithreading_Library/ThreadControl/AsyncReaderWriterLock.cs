@@ -8,7 +8,7 @@
 /// </summary>
 public class AsyncReaderWriterLock
 {
-    private readonly SemaphoreSlim _ReaderQueue = new (0,int.MaxValue);
+    private readonly AwaitableSignalSlim _ReaderQueue = new AwaitableSignalSlim();
     private readonly SemaphoreSlim _WriterQueue = new (0,1);
 
     /// <summary>
@@ -32,8 +32,7 @@ public class AsyncReaderWriterLock
     /// <summary>
     /// a snapshot of the current number of readers which are waiting to enter read
     /// </summary>
-    public int ReadersWaiting => _ReadersWaiting;
-    private int _ReadersWaiting = 0;
+    public int ReadersWaiting => _ReaderQueue.Waiting;
     
     /// <summary>
     /// 0: inactive<br/>
@@ -53,7 +52,7 @@ public class AsyncReaderWriterLock
     private void ReleaseReaders()
     {
         Interlocked.Exchange(ref _State, (int)ReaderWriterState.Reading);
-        _ReaderQueue.Release(Interlocked.Exchange(ref _ReadersWaiting, 0));
+        _ReaderQueue.FireEvent();
     }
 
     /// <summary>
@@ -68,46 +67,68 @@ public class AsyncReaderWriterLock
     /// <summary>
     /// waits until <see cref="ReleaseReaders"/> is executed
     /// </summary>
-    private async Task WaitForReaderSlot()
+    private async Task<bool> WaitForReaderSlot(TimeSpan? timeOut, CancellationToken? cancellation)
     {
-        Interlocked.Increment(ref _ReadersWaiting);
-        await _ReaderQueue.WaitAsync();
+        return await _ReaderQueue.AwaitSignalAsync(timeOut, cancellation);
     }
     /// <summary>
     /// waits until the own thread receives a slot by calling <see cref="ReleaseWriter"/>
     /// </summary>
-    private async Task WaitForWriterSlot()
+    private async Task<bool> WaitForWriterSlot(TimeSpan? timeOut = null, CancellationToken? cancellation = null)
     {
         Interlocked.Increment(ref _WritersWaiting);
-        await _WriterQueue.WaitAsync();
+        bool success = false;
+        try
+        {
+            if (timeOut is null)
+            {
+                await _WriterQueue.WaitAsync(cancellation ?? CancellationToken.None);
+                success = true;
+            }
+
+            else
+                success = await _WriterQueue.WaitAsync(timeOut.Value, cancellation ?? CancellationToken.None);
+        }
+        catch (OperationCanceledException ex)
+        {
+            // just return false
+        }
         Interlocked.Decrement(ref _WritersWaiting);
+        return success;
     }
 
     /// <summary>
-    /// Enters the reader queue and returns when reading is allowed. 
-    /// This method allows concurrent reading operations but ensures exclusive writing access by waiting for any active writer to complete before entering the reading state.
+    /// This method ensures that multiple read operations can occur concurrently without interfering with exclusive write operations, maintaining data integrity.<br/>
     /// When invoked, it either immediately grants access to start reading if no writers are active or waits asynchronously until reading is safe.
     /// </summary>
     /// <returns>
-    /// A task that completes with an <see cref="IAsyncDisposable"/>. Disposing the returned object marks the reading process as complete and potentially allows waiting writers to proceed.
+    /// A Success response that completes with an <see cref="IAsyncDisposable"/>.
+    /// Disposing the returned object marks the reading process as complete and unlocks the ReaderWriterLock.
     /// </returns>
     /// <example>
-    /// Here's how you can use <see cref="EnterReadAsync"/> in an asynchronous method to safely read from a shared resource:
+    /// Simple usage, when no timeout / cancellation is given:
     /// <code>
-    /// // Enter the reading state and get a releaser for when reading is complete
     /// await using (await EnterReadAsync())
     /// {
-    ///     // Perform the reading operation here
-    ///     Console.WriteLine("Reading shared data...");
-    ///     // The shared resource can be safely read within this block
+    ///     // The shared resource(s) can be safely read within this block
     /// }
-    /// // Upon disposing of the releaser, the reading state is marked as complete
-    /// </code>
-    /// This method ensures that multiple read operations can occur concurrently without interfering with exclusive write operations, maintaining data integrity.
+    /// </code> <br/>
+    /// 
     /// </example>
-    public async Task<IAsyncDisposable> EnterReadAsync()
+    /// <example>
+    /// Usage when a timeout / cancellation token is provided:
+    /// <code>
+    /// await using (var success = await lockObj.EnterReadAsync(TimeSpan.FromSeconds(2)))
+    /// {
+    ///     if (success.Success)
+    ///     {
+    ///         // The shared resource(s) can be safely read within this block
+    ///     }
+    /// }
+    /// </code>
+    /// </example>
+    public async Task<LockAcquisitionResult> EnterReadAsync(TimeSpan? timeout = null, CancellationToken? token = null)
     {
-        
         while (true)
         {
             ReaderWriterState initialReaderWriterState = (ReaderWriterState)Interlocked.CompareExchange(
@@ -117,7 +138,11 @@ public class AsyncReaderWriterLock
             if (initialReaderWriterState == ReaderWriterState.Writing)
                 // wait until writer is complete
             {
-                await WaitForReaderSlot();
+                bool success = await WaitForReaderSlot(timeout, token);
+                if (!success)
+                {
+                    return new LockAcquisitionResult(false, async () => { });
+                }
                 Interlocked.Increment(ref _ReadersActive);
                 break;
             }
@@ -133,7 +158,11 @@ public class AsyncReaderWriterLock
                 // it is unsafe to start reading. might collide with Releaser.
                 // rollback and wait for next Writer cycle
                 Interlocked.Decrement(ref _ReadersActive);
-                await WaitForReaderSlot();
+                bool success = await WaitForReaderSlot(timeout, token);
+                if (!success)
+                {
+                    return new LockAcquisitionResult(false, async () => { });
+                }
                 Interlocked.Increment(ref _ReadersActive);
                 break;
             }
@@ -144,12 +173,12 @@ public class AsyncReaderWriterLock
             }
         }
         
-        return new Releaser(async () =>
+        return new LockAcquisitionResult(true, async () =>
         {
             if (Interlocked.Decrement(ref _ReadersActive) == 0)
             {
                 if (_WritersWaiting > 0) ReleaseWriter();
-                else if (_ReadersWaiting > 0) ReleaseReaders();
+                else if (_ReaderQueue.Waiting > 0) ReleaseReaders();
                 else Interlocked.Exchange(ref _State, (int)ReaderWriterState.Inactive);
                 await Task.CompletedTask;
             }
@@ -165,20 +194,27 @@ public class AsyncReaderWriterLock
     /// A task that completes with an <see cref="IAsyncDisposable"/>. Disposing the returned object marks the writing process as complete and potentially allows waiting readers or writers to proceed.
     /// </returns>
     /// <example>
-    /// Here's how you can use <see cref="EnterWriteAsync"/> in an asynchronous method to safely write to a shared resource:
+    /// Simple usage, when no timeout / cancellation is given:
     /// <code>
-    /// // Enter the writing state and get a releaser for when writing is complete
     /// await using (await EnterWriteAsync())
     /// {
-    ///     // Perform the writing operation here
-    ///     Console.WriteLine("Writing to shared data...");
-    ///     // The shared resource can be safely written within this block
+    ///     // The shared resource(s) can be safely written to within this block
     /// }
-    /// // Upon disposing of the releaser, the writing state is marked as complete
-    /// </code>
-    /// This method ensures that the write operation occurs exclusively, without interference from other read or write operations, maintaining data integrity.
+    /// </code> 
     /// </example>
-    public async Task<IAsyncDisposable> EnterWriteAsync()
+    /// <example>
+    /// Usage when a timeout / cancellation token is provided:
+    /// <code>
+    /// await using (var success = await lockObj.EnterWriteAsync(TimeSpan.FromSeconds(2)))
+    /// {
+    ///     if (success.Success)
+    ///     {
+    ///         // TThe shared resource(s) can be safely written to within this block
+    ///     }
+    /// }
+    /// </code>
+    /// </example>
+    public async Task<LockAcquisitionResult> EnterWriteAsync(TimeSpan? timeout = null, CancellationToken? token = null)
     {
         
         while (true)
@@ -190,13 +226,21 @@ public class AsyncReaderWriterLock
                     (int)ReaderWriterState.Inactive);
             if (initialReaderWriterState == ReaderWriterState.Writing)
             {
-                await WaitForWriterSlot();
+                bool success = await WaitForWriterSlot(timeout, token);
+                if (!success)
+                {
+                    return new LockAcquisitionResult(false, async () => { });
+                }
                 Interlocked.Exchange(ref _State, (int)ReaderWriterState.Writing);
                 break;
             }
             else if (initialReaderWriterState == ReaderWriterState.Reading)
             {
-                await WaitForWriterSlot();
+                bool success = await WaitForWriterSlot(timeout, token);
+                if (!success)
+                {
+                    return new LockAcquisitionResult(false, async () => { });
+                }
                 Interlocked.Exchange(ref _State, (int)ReaderWriterState.Writing);
                 break;
             }
@@ -205,10 +249,10 @@ public class AsyncReaderWriterLock
 
         Interlocked.Increment(ref _WritersActive);
         
-        return new Releaser(async () =>
+        return new LockAcquisitionResult(true, async () =>
         {
             Interlocked.Decrement(ref _WritersActive);
-            if (_ReadersWaiting > 0) ReleaseReaders();
+            if (_ReaderQueue.Waiting > 0) ReleaseReaders();
             else if (_WritersWaiting > 0) ReleaseWriter();
             else Interlocked.Exchange(ref _State, (int)ReaderWriterState.Inactive);
             await Task.CompletedTask;
@@ -218,11 +262,13 @@ public class AsyncReaderWriterLock
     /// <summary>
     /// disposable which marks the task as finished
     /// </summary>
-    private class Releaser : IAsyncDisposable
+    public class LockAcquisitionResult  : IAsyncDisposable
     {
+        public bool Success { get; }
         private readonly Func<Task> _releaseAction;
-        public Releaser(Func<Task> releaseAction)
+        public LockAcquisitionResult (bool success, Func<Task> releaseAction)
         {
+            Success = success;
             _releaseAction = releaseAction;
         }
 

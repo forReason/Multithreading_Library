@@ -369,4 +369,68 @@ public class AsyncReaderWriterLockTests
 
         Assert.False(tornReadDetected, "Detected a torn read, indicating a non-atomic update or read.");
     }
+    [Fact]
+    public async Task EnterReadAsync_TimesOut_IfLockNotAcquired()
+    {
+        var lockObj = new Multithreading_Library.ThreadControl.AsyncReaderWriterLock();
+        // Assume this timeout is less than the time it takes for a lock to be available.
+        TimeSpan shortTimeout = TimeSpan.FromMilliseconds(100);
+
+        var write = await lockObj.EnterWriteAsync();
+        var result = await lockObj.EnterReadAsync(shortTimeout);
+
+        Assert.False(result.Success, "Expected lock acquisition to fail due to timeout.");
+        await result.DisposeAsync();
+        await write.DisposeAsync();
+    }
+    [Fact]
+    public async Task EnterReadAsync_Cancels_IfRequested()
+    {
+        var lockObj = new Multithreading_Library.ThreadControl.AsyncReaderWriterLock();
+        var cancellationTokenSource = new CancellationTokenSource();
+
+        var write = await lockObj.EnterWriteAsync();
+        var readTask = lockObj.EnterReadAsync(null, cancellationTokenSource.Token);
+
+        cancellationTokenSource.Cancel();
+        var result = await readTask;
+        Assert.False(result.Success);
+        await result.DisposeAsync();
+        await write.DisposeAsync();
+    }
+    [Fact]
+    public async Task EnterWriteAsync_TimesOut_IfLockNotAcquiredWithinTimeout()
+    {
+        var lockObj = new Multithreading_Library.ThreadControl.AsyncReaderWriterLock();
+        // Set a short timeout to simulate the timeout condition
+        TimeSpan shortTimeout = TimeSpan.FromMilliseconds(100);
+
+        var read = await lockObj.EnterReadAsync();
+        // Attempt to acquire a write lock with a timeout that should expire
+        var write = await lockObj.EnterWriteAsync(shortTimeout, CancellationToken.None);
+
+        Assert.False(write.Success, "Expected write lock acquisition to fail due to timeout.");
+        await read.DisposeAsync();
+        await write.DisposeAsync();
+    }
+    [Fact]
+    public async Task EnterWriteAsync_Cancels_IfCancellationRequested()
+    {
+        var lockObj = new Multithreading_Library.ThreadControl.AsyncReaderWriterLock();
+        var cancellationTokenSource = new CancellationTokenSource();
+
+        var read = await lockObj.EnterReadAsync();
+        
+        // Start the write lock acquisition operation
+        var writeTask = lockObj.EnterWriteAsync(null, cancellationTokenSource.Token);
+
+        // Cancel the operation to simulate a user cancellation
+        cancellationTokenSource.Cancel();
+
+        // Verify that the operation was canceled
+        var write = await writeTask;
+        Assert.False(write.Success, "Expected write lock acquisition to be canceled.");
+        await read.DisposeAsync();
+        await write.DisposeAsync();
+    }
 }
