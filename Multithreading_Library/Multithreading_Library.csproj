@@ -16,7 +16,7 @@
     <Copyright>Julian Bechtold</Copyright>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT-Modern-Variant</PackageLicenseExpression>
-    <PackageReleaseNotes>2.4.2
+    <PackageReleaseNotes>2.4.5
 added task timer function
 
 2.4.1
@@ -43,7 +43,7 @@ Added an implementation of asyncReaderWriterLock
 - implement new debouncers
 - clean all code by fixing compiler warnings
 - update xml comments</PackageReleaseNotes>
-    <Version>2.4.2</Version>
+    <Version>2.4.5</Version>
     <IncludeSymbols>False</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <RepositoryType>git</RepositoryType>
