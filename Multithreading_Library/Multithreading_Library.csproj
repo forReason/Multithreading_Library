@@ -17,7 +17,14 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseExpression>MIT-Modern-Variant</PackageLicenseExpression>
     <PackageReleaseNotes>2.5.0
-Revise Cache
+        Revise Cache
+        2.4.6
+- update packages
+
+2.4.5
+added task timer function
+
+2.4.1 
 
 2.4.1
 - AsyncReaderWriterLock:added optional Timeout and cancellation token
@@ -43,11 +50,11 @@ Added an implementation of asyncReaderWriterLock
 - implement new debouncers
 - clean all code by fixing compiler warnings
 - update xml comments</PackageReleaseNotes>
-    <Version>2.5.0</Version>
+    <Version>2.4.1</Version>
     <IncludeSymbols>False</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <RepositoryType>git</RepositoryType>
-    <PackageOutputPath>/mnt/big-data/Projects/Programmbibliotheken/LocalNugetPackages</PackageOutputPath>
+    <PackageOutputPath>Y:\Projects\Programmbibliotheken\LocalNugetPackages</PackageOutputPath>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
