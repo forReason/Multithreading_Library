@@ -9,9 +9,13 @@ namespace Multithreading_Library.DataTransfer
     /// <remarks>basically the Set operators are overridden since Memory Cache does not prevent race conditions on Set Operations</remarks>
     /// <typeparam name="TItem">the Value Type</typeparam>
     /// <typeparam name="TKey">the Key Type</typeparam>
-    public class Cache<TItem, TKey> where TKey : notnull
+    public class Cache<TKey,TItem> where TKey : notnull
     {
-        private readonly MemoryCache _cache = new (new MemoryCacheOptions());
+        public Cache(MemoryCacheOptions options)
+        {
+            _cache = new (options);
+        }
+        private readonly MemoryCache _cache;
         private readonly ConcurrentDictionary<TKey, SemaphoreSlim> _locks = new();
 
         /// <summary>
