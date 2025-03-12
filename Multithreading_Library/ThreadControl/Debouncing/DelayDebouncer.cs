@@ -30,8 +30,9 @@ public class DelayDebouncer : IDisposable
 {
     private readonly TimeSpan _delay;
     private Action? _pendingAction;
+    private Func<Task>? _pendingAsyncAction;
     private readonly object _lock = new object();
-    private readonly ManualResetEventSlim _resetEvent = new (true); // Initially set to signaled state.
+    private readonly ManualResetEventSlim _resetEvent = new(true);
     private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
     private bool _disposed;
@@ -83,55 +84,71 @@ public class DelayDebouncer : IDisposable
         lock (_lock)
         {
             _pendingAction = action;
-            if (!_resetEvent.IsSet)
+            _pendingAsyncAction = null;
+            if (!_resetEvent.IsSet) return;
+            _resetEvent.Reset();
+        }
+
+        Task.Run(() => ExecuteDebouncedActionAsync(), _cancellationTokenSource.Token);
+    }
+
+    public void DebounceAsync(Func<Task> asyncAction)
+    {
+        lock (_lock)
+        {
+            _pendingAsyncAction = asyncAction;
+            _pendingAction = null;
+            if (!_resetEvent.IsSet) return;
+            _resetEvent.Reset();
+        }
+
+        Task.Run(() => ExecuteDebouncedActionAsync(), _cancellationTokenSource.Token);
+    }
+
+    private async Task ExecuteDebouncedActionAsync()
+    {
+        try
+        {
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token);
+            if (linkedCts.Token.WaitHandle.WaitOne(_delay))
             {
-                // If a pending action is already scheduled, we just update the action and let the existing task handle it.
                 return;
             }
 
-            _resetEvent.Reset(); // Reset the event to non-signaled, indicating a pending action.
+            Action? localAction;
+            Func<Task>? localAsyncAction;
+
+            lock (_lock)
+            {
+                localAction = _pendingAction;
+                localAsyncAction = _pendingAsyncAction;
+                _pendingAction = null;
+                _pendingAsyncAction = null;
+                _resetEvent.Set();
+            }
+
+            if (localAsyncAction != null)
+            {
+                await localAsyncAction();
+            }
+            else
+            {
+                localAction?.Invoke();
+            }
         }
-
-        Task.Run(() =>
+        catch (OperationCanceledException)
         {
-            try
-            {
-                // Use a local cancellation token source that can be canceled if a new action is debounced.
-                using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token))
-                {
-                    Action? localAction;
-
-                    if (linkedCts.Token.WaitHandle.WaitOne(_delay))
-                    {
-                        // If we get here, the wait was cancelled.
-                        return;
-                    }
-
-                    lock (_lock)
-                    {
-                        localAction = _pendingAction;
-                        _pendingAction = null;
-                        _resetEvent.Set(); // No longer any pending action.
-                    }
-
-                    localAction?.Invoke();
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected if a new action is debounced before the delay period passes.
-            }
-        }, _cancellationTokenSource.Token);
+            // Expected if canceled
+        }
     }
-
     /// <summary>
     /// Cancel any pending debounced actions. This will cause the waiting task to complete early.
     /// </summary>
     public void Cancel()
     {
         _cancellationTokenSource.Cancel();
-        _cancellationTokenSource = new CancellationTokenSource(); // Prepare for next action.
-        _resetEvent.Set(); // Ensure any lock is released.
+        _cancellationTokenSource = new CancellationTokenSource();
+        _resetEvent.Set();
     }
 
     /// <summary>
@@ -155,7 +172,6 @@ public class DelayDebouncer : IDisposable
             _cancellationTokenSource.Dispose();
             _resetEvent.Dispose();
         }
-
         _disposed = true;
     }
 

@@ -78,4 +78,83 @@ public class DelayDebouncerTests
         Assert.Throws<ObjectDisposedException>(() => { var _ = ctsAfterDispose.Token; }); // Indicates Dispose was called.
     }
 
+    [Fact]
+        public async Task DebounceAsync_ExecutesActionAfterDelay()
+        {
+            int executionCount = 0;
+            var debouncer = new DelayDebouncer(TimeSpan.FromMilliseconds(100));
+
+            debouncer.DebounceAsync(async () =>
+            {
+                await Task.Delay(10); // Simulate async work.
+                Interlocked.Increment(ref executionCount);
+            });
+
+            await Task.Delay(50);
+            Assert.Equal(0, executionCount); // Action should not have executed yet.
+
+            await Task.Delay(100);
+            Assert.Equal(1, executionCount); // Action should have executed after delay.
+
+            debouncer.Dispose();
+        }
+
+        [Fact]
+        public async Task DebounceAsync_ExecutesOnlyLastAction()
+        {
+            int executionCount = 0;
+            int executedAction = -1;
+            var debouncer = new DelayDebouncer(TimeSpan.FromMilliseconds(100));
+
+            // Schedule multiple async actions in quick succession.
+            for (int i = 0; i < 5; i++)
+            {
+                int localI = i;
+                debouncer.DebounceAsync(async () =>
+                {
+                    await Task.Delay(10); // Simulate async work.
+                    Interlocked.Increment(ref executionCount);
+                    executedAction = localI;
+                });
+            }
+
+            await Task.Delay(200);
+            Assert.Equal(1, executionCount); // Only the last action should have executed.
+            Assert.Equal(4, executedAction); // The last scheduled action should have executed.
+
+            debouncer.Dispose();
+        }
+
+        [Fact]
+        public async Task DebounceAsync_CancellationPreventsAction()
+        {
+            int executionCount = 0;
+            var debouncer = new DelayDebouncer(TimeSpan.FromMilliseconds(1000));
+
+            debouncer.DebounceAsync(async () =>
+            {
+                await Task.Delay(10);
+                Interlocked.Increment(ref executionCount);
+            });
+
+            debouncer.Cancel();
+
+            await Task.Delay(150);
+            Assert.Equal(0, executionCount); // Action should have been canceled.
+
+            debouncer.Dispose();
+        }
+
+        [Fact]
+        public void DisposeAsync_ReleasesResources()
+        {
+            var debouncer = new DelayDebouncer(TimeSpan.FromSeconds(1));
+            var ctsField = typeof(DelayDebouncer).GetField("_cancellationTokenSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            Assert.NotNull(ctsField);
+            debouncer.Dispose();
+
+            var ctsAfterDispose = (CancellationTokenSource)ctsField!.GetValue(debouncer)!;
+            Assert.Throws<ObjectDisposedException>(() => { var _ = ctsAfterDispose.Token; }); // Indicates Dispose was called.
+        }
 }
