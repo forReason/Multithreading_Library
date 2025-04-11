@@ -23,5 +23,13 @@ namespace Multithreading_Library.ThreadControl
         {
             return _locks.GetOrAdd(key, _ => new ReaderWriterLockSlim());
         }
+        /// <summary>
+        /// revokes a lock from a dictionary to avoid clogging
+        /// </summary>
+        /// <param name="key"></param>
+        public void RemoveLockObject(T key)
+        {
+            _locks.TryRemove(key, out _);
+        }
     }
 }
